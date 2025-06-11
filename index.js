@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
 const usersRoutes = require('./src/api/users.js');
 const storesRoutes = require('./src/api/stores.js');
@@ -14,6 +15,16 @@ const publicRoutes = require('./src/api/public.js'); // <-- السطر الجد�
 
 const app = express();
 const PORT = 3000;
+
+// تفعيل CORS
+app.use(cors({
+  origin: [
+    'https://admin-panel-gamma-ivory.vercel.app', // إضافة رابط الواجهة الأمامية
+    'https://admin-panel-dkqpiazmq-nizars-projects-a72b7b18.vercel.app' // إضافة رابط الواجهة الأمامية الثاني
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
 
 app.use(express.json());
 
@@ -31,3 +42,4 @@ app.use('/api', publicRoutes); // <-- السطر الجديد (لاحظ المس
 app.listen(PORT, () => {
   console.log(`الخادم يعمل الآن على الرابط http://localhost:${PORT}`);
 });
+
