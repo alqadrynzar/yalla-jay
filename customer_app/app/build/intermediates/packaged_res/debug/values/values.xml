@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_app_grey">#FFF0F0F0</color>
+    <color name="background_app_light">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="colorPrimaryDarkOrange">#F57C00</color>
+    <color name="colorPrimaryLightOrange">#FFE0B2</color>
+    <color name="colorPrimaryOrange">#FF9800</color>
+    <color name="colorSecondaryBlue">#2196F3</color>
+    <color name="colorSecondaryDarkBlue">#1976D2</color>
+    <color name="colorSecondaryLightBlue">#BBDEFB</color>
+    <color name="divider_color">#1F000000</color>
+    <color name="text_primary_on_dark">#FFFFFFFF</color>
+    <color name="text_primary_on_light">#DE000000</color>
+    <color name="text_secondary_on_dark">#B3FFFFFF</color>
+    <color name="text_secondary_on_light">#8A000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <dimen name="grid_spacing">10dp</dimen>
+    <string name="action_cart">سلة المشتريات</string>
+    <string name="already_have_account_login_text">لديك حساب بالفعل؟ سجّل الدخول</string>
+    <string name="app_name">يلا جاي</string>
+    <string name="button_confirm_region">تأكيد الاختيار</string>
+    <string name="confirm_password_hint">تأكيد كلمة المرور</string>
+    <string name="email_hint">البريد الإلكتروني</string>
+    <string name="footer_line_1">يلا جاي أسلوب حياة</string>
+    <string name="footer_line_2">يلا جاي لحياة اسهل</string>
+    <string name="footer_line_3">يلا جاي كل ما تتمنى</string>
+    <string name="footer_line_4">دائمانجد حلولا لمشاكلك</string>
+    <string name="forgot_password_text">هل نسيت كلمة المرور؟</string>
+    <string name="full_name_hint">الاسم الكامل</string>
+    <string name="gcm_defaultSenderId" translatable="false">237485130768</string>
+    <string name="google_api_key" translatable="false">AIzaSyAnZBFR-LUE39fg-DjTkMElc7wkmwLsbLw</string>
+    <string name="google_app_id" translatable="false">1:237485130768:android:e6fc3e9b841e829864b695</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAnZBFR-LUE39fg-DjTkMElc7wkmwLsbLw</string>
+    <string name="google_storage_bucket" translatable="false">yallajay-19ece.firebasestorage.app</string>
+    <string name="login_button_text">تسجيل الدخول</string>
+    <string name="login_text">دخول</string>
+    <string name="logout_button_text">تسجيل الخروج</string>
+    <string name="message_failed_to_load_service_regions">فشل تحميل مناطق الخدمة. يرجى المحاولة مرة أخرى.</string>
+    <string name="message_no_service_regions_available">لا توجد مناطق خدمة متاحة حاليًا.</string>
+    <string name="message_please_select_a_region">يرجى اختيار منطقة خدمة أولاً.</string>
+    <string name="navigation_drawer_close">إغلاق قائمة التنقل</string>
+    <string name="navigation_drawer_contact_admin">تواصل مع الإدارة</string>
+    <string name="navigation_drawer_edit_profile">تعديل الملف الشخصي</string>
+    <string name="navigation_drawer_notifications">مركز الإشعارات</string>
+    <string name="navigation_drawer_open">فتح قائمة التنقل</string>
+    <string name="navigation_drawer_order_history">الطلبات السابقة</string>
+    <string name="navigation_drawer_user_name_placeholder">اسم المستخدم</string>
+    <string name="no_account_signup_text">ليس لديك حساب؟ انشئ الآن</string>
+    <string name="order_details_label_delivery_address">عنوان التوصيل</string>
+    <string name="order_details_label_delivery_fee">رسوم التوصيل</string>
+    <string name="order_details_label_grand_total">الإجمالي النهائي</string>
+    <string name="order_details_label_order_summary">ملخص الطلب</string>
+    <string name="order_details_label_products">المنتجات</string>
+    <string name="order_details_label_special_notes">ملاحظات خاصة</string>
+    <string name="order_details_label_subtotal">المجموع الفرعي</string>
+    <string name="password_hint">كلمة المرور</string>
+    <string name="phone_number_hint">رقم الهاتف</string>
+    <string name="project_id" translatable="false">yallajay-19ece</string>
+    <string name="register_button_text">إنشاء حساب جديد</string>
+    <string name="register_text">إنشاء الحساب</string>
+    <string name="select_region_heading">اختر منطقة الخدمة</string>
+    <string name="title_activity_add_edit_address">إضافة أو تعديل عنوان</string>
+    <string name="title_activity_cart">سلة المشتريات</string>
+    <string name="title_activity_category_list">أقسام المتجر</string>
+    <string name="title_activity_edit_profile">تعديل الملف الشخصي</string>
+    <string name="title_activity_home">الرئيسية</string>
+    <string name="title_activity_login">تسجيل الدخول</string>
+    <string name="title_activity_notifications">مركز الإشعارات</string>
+    <string name="title_activity_order_detail">تفاصيل الطلب</string>
+    <string name="title_activity_order_history">طلباتي السابقة</string>
+    <string name="title_activity_order_success">تم تأكيد الطلب</string>
+    <string name="title_activity_product_list">المنتجات</string>
+    <string name="title_activity_register">إنشاء حساب جديد</string>
+    <string name="title_activity_select_service_region">اختر منطقة خدمتك</string>
+    <string name="title_activity_store_list">المتاجر المتاحة</string>
+    <string name="welcome_home_message">مرحبًا بك في YallaJay!</string>
+    <style name="Theme.YallaJayCustomerApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimaryOrange</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorSecondary">@color/colorSecondaryBlue</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="android:statusBarColor">@color/colorPrimaryDarkOrange</item>
+        <item name="android:windowBackground">@drawable/yallajay</item>
+    </style>
+    <style name="Theme.YallaJayCustomerApp.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar"/>
+    <style name="Theme.YallaJayCustomerApp.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light"/>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.YallaJayCustomerApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimaryOrange</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorSecondary">@color/colorSecondaryBlue</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="android:statusBarColor">@color/colorPrimaryDarkOrange</item>
+        <item name="android:windowBackground">@drawable/yallajay</item>
+    </style>
+
+    <style name="Theme.YallaJayCustomerApp.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
+    <style name="Theme.YallaJayCustomerApp.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
+
+</resources>

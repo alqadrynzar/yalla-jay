@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.yallajay.customerapp-mergeDebugResources-43:/values-h٧٢٠dp-v13/values-h٧٢٠dp-v13.xml",
+            "map": [
+                {
+                    "source": "/home/nizar/.gradle/caches/transforms-4/e79d2d6e23fc1ff0c7f6e8e3c09d0d9e/transformed/appcompat-1.7.0/res/values-h720dp-v13/values-h720dp-v13.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "66",
+                        "endOffsets": "117"
+                    }
+                }
+            ]
+        }
+    ]
+}

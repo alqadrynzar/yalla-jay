@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "237485130768",
+    "project_id": "yallajay-19ece",
+    "storage_bucket": "yallajay-19ece.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:237485130768:android:e6fc3e9b841e829864b695",
+        "android_client_info": {
+          "package_name": "com.yallajay.customerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnZBFR-LUE39fg-DjTkMElc7wkmwLsbLw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,386 @@
+[
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_stat_notification.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_stat_notification.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_add.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_add.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_yallajay0.jpg.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/yallajay0.jpg"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_other.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_other.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_other.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_other.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_restaurant.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_restaurant.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_category.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_category.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxhdpi_ic_launcher_monochrome.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxhdpi/ic_launcher_monochrome.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_clothing.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_clothing.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_notification.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_notification.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xhdpi_ic_launcher_monochrome.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xhdpi/ic_launcher_monochrome.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxxhdpi_ic_launcher_monochrome.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxxhdpi/ic_launcher_monochrome.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/menu_drawer_menu_home.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/menu/drawer_menu_home.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_store.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_store.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_appliances.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_appliances.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxxhdpi_ic_launcher_background.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxxhdpi/ic_launcher_background.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xhdpi_ic_launcher_background.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xhdpi/ic_launcher_background.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_other.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_other.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_sweets.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_sweets.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_restaurant.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_restaurant.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_sweets.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_sweets.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_shopping_cart.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_shopping_cart.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_appliances.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_appliances.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_appliances.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_appliances.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-hdpi_ic_launcher_foreground.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-hdpi/ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_grocery.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_grocery.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_product_list.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_product_list.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_cart.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_cart.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-mdpi_ic_launcher_monochrome.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-mdpi/ic_launcher_monochrome.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_sweets.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_sweets.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_restaurant.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_restaurant.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxhdpi_ic_launcher_background.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxhdpi/ic_launcher_background.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_other.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_other.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xhdpi_ic_launcher_foreground.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xhdpi/ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_order_product.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_order_product.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_success_check.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_success_check.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_other.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_other.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_sweets.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_sweets.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxxhdpi_ic_storetype_clothing.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxxhdpi/ic_storetype_clothing.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-mdpi_ic_launcher_foreground.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-mdpi/ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_store_list.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_store_list.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_restaurant.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_restaurant.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_order_detail.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_order_detail.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-hdpi_ic_launcher_background.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-hdpi/ic_launcher_background.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_status_background_closed.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/status_background_closed.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_edit_profile.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_edit_profile.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_grocery.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_grocery.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_yallajay1.jpg.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/yallajay1.jpg"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_select_service_region.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_select_service_region.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_address_list.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_address_list.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_register.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_register.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_grocery.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_grocery.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_appliances.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_appliances.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_menu.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_menu.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_order_history.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_order_history.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_main.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/menu_main_toolbar_menu.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/menu/main_toolbar_menu.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_home.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_home.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_address.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_address.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_product.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_product.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_clothing.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_clothing.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_order_success.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_order_success.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_status_background_open.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/status_background_open.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-mdpi_ic_launcher_background.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-mdpi/ic_launcher_background.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-hdpi_ic_launcher_monochrome.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-hdpi/ic_launcher_monochrome.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xhdpi_ic_storetype_grocery.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xhdpi/ic_storetype_grocery.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_edit.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_edit.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_order.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_order.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxhdpi_ic_launcher_foreground.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxhdpi/ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_yallajay.jpg.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/yallajay.jpg"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_delete.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_delete.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_category_list.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_category_list.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_sweets.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_sweets.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_yallajay2.jpg.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/yallajay2.jpg"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxxhdpi_ic_launcher_foreground.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxxhdpi/ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_appliances.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_appliances.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_restaurant.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_restaurant.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_nav_header_home.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/nav_header_home.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-mdpi_ic_storetype_grocery.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-mdpi/ic_storetype_grocery.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_store_type.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_store_type.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_notification.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_notification.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_item_service_region.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/item_service_region.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_login.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_remove.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_remove.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_add_edit_address.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_add_edit_address.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-xxhdpi_ic_storetype_clothing.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-xxhdpi/ic_storetype_clothing.png"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable_ic_add_shopping_cart.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable/ic_add_shopping_cart.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/layout_activity_cart.xml.flat",
+        "source": "com.yallajay.customerapp-main-47:/layout/activity_cart.xml"
+    },
+    {
+        "merged": "com.yallajay.customerapp-merged_res-45:/drawable-hdpi_ic_storetype_clothing.png.flat",
+        "source": "com.yallajay.customerapp-main-47:/drawable-hdpi/ic_storetype_clothing.png"
+    }
+]

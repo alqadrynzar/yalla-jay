@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.yallajay.customerapp-mergeDebugResources-43:/values-hdpi-v4/values-hdpi-v4.xml",
+            "map": [
+                {
+                    "source": "/home/nizar/.gradle/caches/transforms-4/e79d2d6e23fc1ff0c7f6e8e3c09d0d9e/transformed/appcompat-1.7.0/res/values-hdpi-v4/values-hdpi-v4.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "6",
+                        "endColumns": "13",
+                        "endOffsets": "327"
+                    }
+                }
+            ]
+        }
+    ]
+}
