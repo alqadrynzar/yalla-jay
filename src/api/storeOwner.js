@@ -8,6 +8,40 @@ const router = express.Router();
 
 const ALLOWED_OWNER_OVERRIDE_STATUSES = ['AUTO', 'FORCE_CLOSED'];
 
+// --- NEW ROUTE TO GET ALL STORES FOR AN OWNER ---
+router.get(
+  '/my-stores',
+  authMiddleware,
+  checkRole('store_owner'),
+  async (req, res) => {
+    const ownerId = req.user.id;
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT 
+          id, 
+          name, 
+          is_active, 
+          owner_choice_status
+        FROM stores 
+        WHERE owner_id = $1
+        ORDER BY name ASC;
+      `;
+      const result = await client.query(query, [ownerId]);
+      res.status(200).json({
+        message: 'تم استرجاع قائمة متاجرك بنجاح.',
+        stores: result.rows
+      });
+    } catch (err) {
+      console.error('Error fetching owner\'s stores:', err);
+      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء جلب قائمة المتاجر.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
 const calculateDateRange = (period, startDateStr, endDateStr) => {
   let startDate = new Date();
   let endDate = new Date();
