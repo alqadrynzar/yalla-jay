@@ -7,39 +7,37 @@ const router = express.Router();
 
 // GET /api/products/search - البحث عن منتجات مع فلترة وترتيب وترقيم صفحات باستخدام FTS
 router.get('/search', authMiddleware, async (req, res) => {
-  const { 
-    q, 
-    categoryId, 
-    storeId, 
-    minPrice, 
-    maxPrice, 
+  const {
+    q,
+    categoryId,
+    storeId,
+    minPrice,
+    maxPrice,
     isAvailable,
-    sortBy, 
-    page = 1, 
-    limit = 10 
+    sortBy,
+    page = 1,
+    limit = 10
   } = req.query;
 
   const client = await pool.connect();
   try {
     let baseQuery = `
-      SELECT 
-        p.id, p.name, p.description, p.price, p.stock_quantity, 
-        p.image_url, p.is_available, p.store_id, s.name as store_name, 
+      SELECT
+        p.id, p.name, p.description, p.price, p.stock_quantity,
+        p.image_url, p.is_available, p.store_id, s.name as store_name,
         p.category_id, c.name as category_name, p.created_at, p.updated_at
       FROM products p
       JOIN stores s ON p.store_id = s.id
       JOIN categories c ON p.category_id = c.id
     `;
     const countQueryBase = `
-      SELECT COUNT(p.id) 
+      SELECT COUNT(p.id)
       FROM products p
       JOIN stores s ON p.store_id = s.id
       JOIN categories c ON p.category_id = c.id
     `;
 
-    // --- التعديل الجذري هنا ---
-    // دائماً نبدأ بهذه الشروط الأساسية لأي طلب من الزبون
-    const whereClauses = ["s.is_active = true", "p.is_available = true"]; 
+    const whereClauses = ["s.is_active = true"];
     const queryParams = [];
     let paramIndex = 1;
 
@@ -68,8 +66,17 @@ router.get('/search', authMiddleware, async (req, res) => {
       queryParams.push(parseFloat(maxPrice));
       paramIndex++;
     }
-    
-    // --- تم حذف منطق isAvailable الديناميكي من هنا لأنه أصبح شرطاً أساسياً في الأعلى ---
+
+    const isOwnerRequest = req.user && req.user.role === 'store_owner';
+    if (isOwnerRequest) {
+      if (isAvailable === 'false') {
+        whereClauses.push(`p.is_available = false`);
+      } else if (isAvailable === 'true') {
+        whereClauses.push(`p.is_available = true`);
+      }
+    } else {
+      whereClauses.push(`p.is_available = true`);
+    }
 
     let queryWithConditions = baseQuery;
     let countQueryWithConditions = countQueryBase;
@@ -79,11 +86,11 @@ router.get('/search', authMiddleware, async (req, res) => {
       queryWithConditions += whereString;
       countQueryWithConditions += whereString;
     }
-    
+
     const totalResult = await client.query(countQueryWithConditions, queryParams);
     const totalItems = parseInt(totalResult.rows[0].count);
 
-    let orderByClause = " ORDER BY p.created_at DESC"; 
+    let orderByClause = " ORDER BY p.created_at DESC";
     if (sortBy) {
       switch (sortBy) {
         case 'price_asc':
@@ -105,11 +112,11 @@ router.get('/search', authMiddleware, async (req, res) => {
     const pageInt = parseInt(page);
     const limitInt = parseInt(limit);
     const offset = (pageInt - 1) * limitInt;
-    
-    const finalQueryParams = [...queryParams]; 
-    finalQueryParams.push(limitInt, offset); 
+
+    const finalQueryParams = [...queryParams];
+    finalQueryParams.push(limitInt, offset);
     queryWithConditions += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-        
+
     const productsResult = await client.query(queryWithConditions, finalQueryParams);
 
     res.status(200).json({
@@ -125,9 +132,6 @@ router.get('/search', authMiddleware, async (req, res) => {
 
   } catch (err) {
     console.error('Error searching products:', err);
-    if (err instanceof TypeError || (err.message && err.message.includes("invalid input syntax"))) { 
-        return res.status(400).json({ message: 'معاملات الفلترة أو الترتيب أو الترقيم غير صالحة.' });
-    }
     res.status(500).json({ message: 'حدث خطأ في الخادم أثناء البحث عن المنتجات.' });
   } finally {
     client.release();
@@ -280,99 +284,4 @@ router.put(
       const ownershipResult = await client.query(ownershipCheckQuery, [productId, ownerId]);
 
       if (ownershipResult.rows.length === 0) {
-        return res.status(403).json({ message: 'الوصول مرفوض: المنتج غير موجود أو لا تملك صلاحية تعديله.' });
-      }
-
-      const { name, price, description, stock_quantity, image_url, is_available, category_id } = req.body;
-      const updateFields = [];
-      const values = [];
-      let paramIndex = 1;
-
-      if (name !== undefined) { updateFields.push(`name = $${paramIndex++}`); values.push(name); }
-      if (price !== undefined) { updateFields.push(`price = $${paramIndex++}`); values.push(price); }
-      if (description !== undefined) { updateFields.push(`description = $${paramIndex++}`); values.push(description); }
-      if (stock_quantity !== undefined) { updateFields.push(`stock_quantity = $${paramIndex++}`); values.push(stock_quantity); }
-      if (image_url !== undefined) { updateFields.push(`image_url = $${paramIndex++}`); values.push(image_url); }
-      if (is_available !== undefined) { updateFields.push(`is_available = $${paramIndex++}`); values.push(is_available); }
-      if (category_id !== undefined) { updateFields.push(`category_id = $${paramIndex++}`); values.push(category_id); }
-      
-      if (updateFields.length === 0) {
-        const currentProductQuery = 'SELECT p.*, s.name as store_name, c.name as category_name FROM products p JOIN stores s ON p.store_id = s.id JOIN categories c ON p.category_id = c.id WHERE p.id = $1';
-        const currentProduct = await client.query(currentProductQuery, [productId]);
-        return res.status(200).json({ message: 'لا توجد بيانات للتحديث.', product: currentProduct.rows[0] });
-      }
-
-      values.push(productId);
-      const updateQuery = `
-        UPDATE products
-        SET ${updateFields.join(', ')}
-        WHERE id = $${paramIndex}
-        RETURNING *;
-      `;
-      
-      const updateResult = await client.query(updateQuery, values);
-      
-      const finalProductQuery = 'SELECT p.*, s.name as store_name, c.name as category_name FROM products p JOIN stores s ON p.store_id = s.id JOIN categories c ON p.category_id = c.id WHERE p.id = $1';
-      const finalProductResult = await client.query(finalProductQuery, [updateResult.rows[0].id]);
-
-
-      res.status(200).json({
-        message: 'تم تحديث المنتج بنجاح.',
-        product: finalProductResult.rows[0]
-      });
-
-    } catch (err) {
-      console.error('Error updating product:', err);
-      if (err.code === '22P02') { return res.status(400).json({ message: 'معرف المنتج غير صالح.' }); }
-      if (err.code === '23503') { return res.status(400).json({ message: 'معرف القسم الجديد غير صالح أو لا ينتمي لمتجر المالك.' });}
-      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء تحديث المنتج.' });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// DELETE /api/products/:productId - حذف منتج
-router.delete(
-  '/:productId',
-  authMiddleware,
-  checkRole('store_owner'),
-  async (req, res) => {
-    const { productId } = req.params;
-    const ownerId = req.user.id;
-    const client = await pool.connect();
-
-    try {
-      const ownershipCheckQuery = `
-        SELECT p.id FROM products AS p
-        JOIN stores AS s ON p.store_id = s.id
-        WHERE p.id = $1 AND s.owner_id = $2;
-      `;
-      const ownershipResult = await client.query(ownershipCheckQuery, [productId, ownerId]);
-
-      if (ownershipResult.rows.length === 0) {
-        return res.status(403).json({ message: 'الوصول مرفوض: المنتج غير موجود أو لا تملك صلاحية حذفه.' });
-      }
-
-      const deleteQuery = 'DELETE FROM products WHERE id = $1 RETURNING id;';
-      const deleteResult = await client.query(deleteQuery, [productId]);
-
-      if (deleteResult.rowCount === 0) {
-        return res.status(404).json({ message: 'المنتج غير موجود.' });
-      }
-
-      res.status(200).json({ message: 'تم حذف المنتج بنجاح.' });
-
-    } catch (err) {
-      console.error('Error deleting product:', err);
-      if (err.code === '22P02') {
-          return res.status(400).json({ message: 'معرف المنتج غير صالح.' });
-      }
-      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء حذف المنتج.' });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-module.exports = router;
+        return res.
