@@ -6,7 +6,7 @@ const checkRole = require('../middleware/authorization.js');
 const router = express.Router();
 
 // GET /api/products/search - البحث عن منتجات مع فلترة وترتيب وترقيم صفحات باستخدام FTS
-router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMiddleware هنا لتمييز المستخدم
+router.get('/search', authMiddleware, async (req, res) => {
   const { 
     q, 
     categoryId, 
@@ -42,7 +42,6 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
     let paramIndex = 1;
 
     if (q) {
-      // --- تعديل هنا: استخدام COALESCE لضمان قوة الاستعلام ---
       whereClauses.push(`to_tsvector('arabic', COALESCE(p.name, '') || ' ' || COALESCE(p.description, '')) @@ websearch_to_tsquery('arabic', $${paramIndex})`);
       queryParams.push(q);
       paramIndex++;
@@ -68,21 +67,16 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
       paramIndex++;
     }
     
-    // --- تعديل هنا: منطق ذكي للفلترة حسب هوية المستخدم ---
     const isOwnerRequest = req.user && req.user.role === 'store_owner';
     if (isOwnerRequest) {
-      // إذا كان صاحب المتجر هو من يطلب، يمكنه طلب المنتجات غير المتوفرة
       if (isAvailable === 'false') {
         whereClauses.push(`p.is_available = false`);
       } else if (isAvailable === 'true') {
         whereClauses.push(`p.is_available = true`);
       }
-      // إذا لم يحدد، لا نضف شرط is_available لنعرض له كل منتجاته
     } else {
-      // إذا كان زبون أو مستخدم عام، نعرض له المنتجات المتوفرة فقط دائماً
       whereClauses.push(`p.is_available = true`);
     }
-    // --- نهاية التعديل ---
 
     let queryWithConditions = baseQuery;
     let countQueryWithConditions = countQueryBase;
@@ -122,6 +116,13 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
     const finalQueryParams = [...queryParams]; 
     finalQueryParams.push(limitInt, offset); 
     queryWithConditions += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    
+    // --- أسطر الطباعة التشخيصية الجديدة ---
+    console.log("--- DEBUG QUERY ---");
+    console.log("SQL:", queryWithConditions);
+    console.log("PARAMS:", finalQueryParams);
+    console.log("-------------------");
+    // --- نهاية أسطر الطباعة ---
         
     const productsResult = await client.query(queryWithConditions, finalQueryParams);
 
@@ -148,6 +149,7 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
 });
 
 
+// ... (باقي الكود كما هو) ...
 // POST /api/products - إنشاء منتج جديد
 router.post(
   '/',
