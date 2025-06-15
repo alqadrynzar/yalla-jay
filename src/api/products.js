@@ -42,9 +42,8 @@ router.get('/search', async (req, res) => {
     let paramIndex = 1;
 
     if (q) {
-      // --- استخدام websearch_to_tsquery ---
       whereClauses.push(`p.document_vector @@ websearch_to_tsquery('arabic', $${paramIndex})`);
-      queryParams.push(q); // قيمة q مباشرة
+      queryParams.push(q);
       paramIndex++;
     }
     if (categoryId) {
@@ -67,13 +66,17 @@ router.get('/search', async (req, res) => {
       queryParams.push(parseFloat(maxPrice));
       paramIndex++;
     }
-    if (isAvailable !== undefined) {
-      if (isAvailable === 'true') {
-        whereClauses.push(`p.is_available = true`);
-      } else if (isAvailable === 'false') {
-        whereClauses.push(`p.is_available = false`);
-      }
+    
+    // --- التعديل هنا ---
+    // تعديل منطق الفلترة ليكون افتراضياً على المنتجات المتوفرة
+    if (isAvailable === 'false') {
+      // هذا الشرط لن يطبقه تطبيق الزبون، ولكنه مفيد لأصحاب المتاجر مستقبلاً
+      whereClauses.push(`p.is_available = false`);
+    } else {
+      // الحالة الافتراضية دائماً تجلب المنتجات المتوفرة
+      whereClauses.push(`p.is_available = true`);
     }
+    // --- نهاية التعديل ---
 
     let queryWithConditions = baseQuery;
     let countQueryWithConditions = countQueryBase;
