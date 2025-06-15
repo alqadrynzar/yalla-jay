@@ -7,6 +7,12 @@ const router = express.Router();
 
 // GET /api/products/search - البحث عن منتجات مع فلترة وترتيب وترقيم صفحات باستخدام FTS
 router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMiddleware هنا لتمييز المستخدم
+  
+  // --- DIAGNOSTIC LOG 1: Log incoming query ---
+  console.log('--- NEW PRODUCT SEARCH REQUEST ---');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('[DIAGNOSTIC] 1. Incoming req.query:', req.query);
+  
   const { 
     q, 
     categoryId, 
@@ -42,7 +48,6 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
     let paramIndex = 1;
 
     if (q) {
-      // --- تعديل هنا: استخدام COALESCE لضمان قوة الاستعلام ---
       whereClauses.push(`to_tsvector('arabic', COALESCE(p.name, '') || ' ' || COALESCE(p.description, '')) @@ websearch_to_tsquery('arabic', $${paramIndex})`);
       queryParams.push(q);
       paramIndex++;
@@ -68,21 +73,16 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
       paramIndex++;
     }
     
-    // --- تعديل هنا: منطق ذكي للفلترة حسب هوية المستخدم ---
     const isOwnerRequest = req.user && req.user.role === 'store_owner';
     if (isOwnerRequest) {
-      // إذا كان صاحب المتجر هو من يطلب، يمكنه طلب المنتجات غير المتوفرة
       if (isAvailable === 'false') {
         whereClauses.push(`p.is_available = false`);
       } else if (isAvailable === 'true') {
         whereClauses.push(`p.is_available = true`);
       }
-      // إذا لم يحدد، لا نضف شرط is_available لنعرض له كل منتجاته
     } else {
-      // إذا كان زبون أو مستخدم عام، نعرض له المنتجات المتوفرة فقط دائماً
       whereClauses.push(`p.is_available = true`);
     }
-    // --- نهاية التعديل ---
 
     let queryWithConditions = baseQuery;
     let countQueryWithConditions = countQueryBase;
@@ -93,8 +93,16 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
       countQueryWithConditions += whereString;
     }
     
+    // --- DIAGNOSTIC LOG 2: Log constructed queries and params before execution ---
+    console.log('[DIAGNOSTIC] 2. Constructed WHERE clause:', whereClauses.join(" AND "));
+    console.log('[DIAGNOSTIC] 3. Count Query SQL:', countQueryWithConditions);
+    console.log('[DIAGNOSTIC] 4. Params for Count Query:', queryParams);
+
     const totalResult = await client.query(countQueryWithConditions, queryParams);
     const totalItems = parseInt(totalResult.rows[0].count);
+    
+    console.log('[DIAGNOSTIC] 5. Total items found by count query:', totalItems);
+
 
     let orderByClause = " ORDER BY p.created_at DESC"; 
     if (sortBy) {
@@ -123,7 +131,15 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
     finalQueryParams.push(limitInt, offset); 
     queryWithConditions += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
         
+    // --- DIAGNOSTIC LOG 3: Log final query ---
+    console.log('[DIAGNOSTIC] 6. Final Select Query SQL:', queryWithConditions);
+    console.log('[DIAGNOSTIC] 7. Params for Final Select Query:', finalQueryParams);
+
     const productsResult = await client.query(queryWithConditions, finalQueryParams);
+
+    // --- DIAGNOSTIC LOG 4: Log result ---
+    console.log('[DIAGNOSTIC] 8. Rows returned by final query:', productsResult.rowCount);
+    console.log('--- END OF PRODUCT SEARCH REQUEST ---');
 
     res.status(200).json({
       message: "تم استرجاع المنتجات بنجاح.",
@@ -137,6 +153,8 @@ router.get('/search', authMiddleware, async (req, res) => { // أضفنا authMi
     });
 
   } catch (err) {
+    // --- DIAGNOSTIC LOG 5: Log any error ---
+    console.error('[DIAGNOSTIC] ERROR caught in /api/products/search:', err);
     console.error('Error searching products:', err);
     if (err instanceof TypeError || (err.message && err.message.includes("invalid input syntax"))) { 
         return res.status(400).json({ message: 'معاملات الفلترة أو الترتيب أو الترقيم غير صالحة.' });
