@@ -37,7 +37,9 @@ router.get('/search', authMiddleware, async (req, res) => {
       JOIN categories c ON p.category_id = c.id
     `;
 
-    const whereClauses = ["s.is_active = true"]; 
+    // --- التعديل الجذري هنا ---
+    // دائماً نبدأ بهذه الشروط الأساسية لأي طلب من الزبون
+    const whereClauses = ["s.is_active = true", "p.is_available = true"]; 
     const queryParams = [];
     let paramIndex = 1;
 
@@ -67,16 +69,7 @@ router.get('/search', authMiddleware, async (req, res) => {
       paramIndex++;
     }
     
-    const isOwnerRequest = req.user && req.user.role === 'store_owner';
-    if (isOwnerRequest) {
-      if (isAvailable === 'false') {
-        whereClauses.push(`p.is_available = false`);
-      } else if (isAvailable === 'true') {
-        whereClauses.push(`p.is_available = true`);
-      }
-    } else {
-      whereClauses.push(`p.is_available = true`);
-    }
+    // --- تم حذف منطق isAvailable الديناميكي من هنا لأنه أصبح شرطاً أساسياً في الأعلى ---
 
     let queryWithConditions = baseQuery;
     let countQueryWithConditions = countQueryBase;
@@ -116,13 +109,6 @@ router.get('/search', authMiddleware, async (req, res) => {
     const finalQueryParams = [...queryParams]; 
     finalQueryParams.push(limitInt, offset); 
     queryWithConditions += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-    
-    // --- أسطر الطباعة التشخيصية الجديدة ---
-    console.log("--- DEBUG QUERY ---");
-    console.log("SQL:", queryWithConditions);
-    console.log("PARAMS:", finalQueryParams);
-    console.log("-------------------");
-    // --- نهاية أسطر الطباعة ---
         
     const productsResult = await client.query(queryWithConditions, finalQueryParams);
 
@@ -149,7 +135,6 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 
-// ... (باقي الكود كما هو) ...
 // POST /api/products - إنشاء منتج جديد
 router.post(
   '/',
