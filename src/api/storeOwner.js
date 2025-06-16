@@ -8,7 +8,49 @@ const router = express.Router();
 
 const ALLOWED_OWNER_OVERRIDE_STATUSES = ['AUTO', 'FORCE_CLOSED'];
 
-// --- NEW ROUTE TO GET ALL STORES FOR AN OWNER ---
+// A helper function to get full order details including items
+const getFullOrderDetails = async (client, orderId) => {
+    const fullOrderDetailsQuery = `
+        SELECT 
+          o.id, o.user_id, u.full_name AS customer_name, u.email AS customer_email, u.phone_number AS customer_phone,
+          o.store_id, st.name AS store_name, 
+          o.status, o.delivery_address, o.special_notes, 
+          o.items_subtotal, o.delivery_fee, o.grand_total,
+          o.rejection_reason, o.preparation_time_estimate_minutes, o.made_ready_at,
+          o.delivery_worker_id, u_dw.full_name AS delivery_worker_name,
+          o.order_placed_at, o.last_status_update_at,
+          o.created_at AS order_created_at, o.updated_at AS order_updated_at
+        FROM orders AS o
+        JOIN stores AS st ON o.store_id = st.id
+        JOIN users AS u ON o.user_id = u.id
+        LEFT JOIN users AS u_dw ON o.delivery_worker_id = u_dw.id
+        WHERE o.id = $1;
+    `;
+    const finalOrderResult = await client.query(fullOrderDetailsQuery, [orderId]);
+    if (finalOrderResult.rows.length === 0) return null;
+
+    const orderDetails = finalOrderResult.rows[0];
+
+    const orderItemsQuery = `
+        SELECT 
+          oi.product_id, 
+          COALESCE(p.name, 'منتج محذوف') AS product_name, 
+          p.image_url AS product_image_url,
+          oi.quantity, 
+          oi.price_at_purchase, 
+          oi.item_subtotal
+        FROM order_items AS oi
+        LEFT JOIN products AS p ON oi.product_id = p.id
+        WHERE oi.order_id = $1
+        ORDER BY COALESCE(p.name, 'منتج محذوف') ASC;
+    `;
+    const orderItemsResult = await client.query(orderItemsQuery, [orderId]);
+    orderDetails.items = orderItemsResult.rows;
+
+    return orderDetails;
+};
+
+
 router.get(
   '/my-stores',
   authMiddleware,
@@ -272,47 +314,20 @@ router.get(
     const client = await pool.connect();
 
     try {
-      const orderQuery = `
-        SELECT 
-          o.id, o.user_id, u.full_name AS customer_name, u.email AS customer_email, u.phone_number AS customer_phone,
-          o.store_id, s.name AS store_name, 
-          o.status, o.delivery_address, o.special_notes, 
-          o.items_subtotal, o.delivery_fee, o.grand_total,
-          o.rejection_reason, o.preparation_time_estimate_minutes,
-          o.delivery_worker_id, u_dw.full_name AS delivery_worker_name,
-          o.order_placed_at, o.last_status_update_at, o.made_ready_at,
-          o.created_at AS order_created_at, o.updated_at AS order_updated_at
-        FROM orders AS o
-        JOIN stores AS s ON o.store_id = s.id
-        JOIN users AS u ON o.user_id = u.id
-        LEFT JOIN users AS u_dw ON o.delivery_worker_id = u_dw.id
-        WHERE o.id = $1 AND s.owner_id = $2;
+      const orderOwnershipQuery = `
+        SELECT id FROM stores 
+        WHERE owner_id = $1 AND id = (SELECT store_id FROM orders WHERE id = $2);
       `;
-      const orderResult = await client.query(orderQuery, [orderId, ownerId]);
-
-      if (orderResult.rows.length === 0) {
-        return res.status(404).json({ message: 'الطلب غير موجود أو لا يتبع لأحد متاجرك.' });
+      const ownershipResult = await client.query(orderOwnershipQuery, [ownerId, orderId]);
+      if (ownershipResult.rows.length === 0) {
+          return res.status(403).json({ message: 'الوصول مرفوض: الطلب لا يتبع لأحد متاجرك.' });
       }
 
-      const orderDetails = orderResult.rows[0];
+      const orderDetails = await getFullOrderDetails(client, orderId);
 
-      // --- THIS IS THE CORRECTED QUERY ---
-      const orderItemsQuery = `
-        SELECT 
-          oi.product_id, 
-          COALESCE(p.name, 'منتج محذوف') AS product_name, 
-          p.image_url AS product_image_url,
-          oi.quantity, 
-          oi.price_at_purchase, 
-          oi.item_subtotal
-        FROM order_items AS oi
-        LEFT JOIN products AS p ON oi.product_id = p.id
-        WHERE oi.order_id = $1
-        ORDER BY COALESCE(p.name, 'منتج محذوف') ASC;
-      `;
-      const orderItemsResult = await client.query(orderItemsQuery, [orderId]);
-
-      orderDetails.items = orderItemsResult.rows;
+      if (!orderDetails) {
+        return res.status(404).json({ message: 'الطلب غير موجود.' });
+      }
 
       res.status(200).json({
         message: 'تم استرجاع تفاصيل الطلب بنجاح.',
@@ -390,28 +405,12 @@ router.put(
           { orderId: orderId.toString(), newStatus: 'preparing' }
       ).catch(err => console.error('Failed to send push notification on order accept:', err));
 
-      const fullOrderDetailsQuery = `
-        SELECT 
-          o.id, o.user_id, u.full_name AS customer_name, u.email AS customer_email, u.phone_number AS customer_phone,
-          o.store_id, st.name AS store_name, 
-          o.status, o.delivery_address, o.special_notes, 
-          o.items_subtotal, o.delivery_fee, o.grand_total,
-          o.rejection_reason, o.preparation_time_estimate_minutes, o.made_ready_at,
-          o.delivery_worker_id, u_dw.full_name AS delivery_worker_name,
-          o.order_placed_at, o.last_status_update_at,
-          o.created_at AS order_created_at, o.updated_at AS order_updated_at
-        FROM orders AS o
-        JOIN stores AS st ON o.store_id = st.id
-        JOIN users AS u ON o.user_id = u.id
-        LEFT JOIN users AS u_dw ON o.delivery_worker_id = u_dw.id
-        WHERE o.id = $1;
-      `;
-      const finalOrderResult = await client.query(fullOrderDetailsQuery, [orderId]);
+      const finalOrderDetails = await getFullOrderDetails(client, orderId);
 
       await client.query('COMMIT');
       res.status(200).json({
         message: 'تم قبول الطلب وجاري تحضيره.',
-        order: finalOrderResult.rows[0]
+        order: finalOrderDetails
       });
 
     } catch (err) {
@@ -481,28 +480,12 @@ router.put(
           { orderId: orderId.toString(), newStatus: 'ready_for_delivery' }
       ).catch(err => console.error('Failed to send push notification on order ready:', err));
 
-      const fullOrderDetailsQuery = `
-        SELECT 
-          o.id, o.user_id, u.full_name AS customer_name, u.email AS customer_email, u.phone_number AS customer_phone,
-          o.store_id, st.name AS store_name, 
-          o.status, o.delivery_address, o.special_notes, 
-          o.items_subtotal, o.delivery_fee, o.grand_total,
-          o.rejection_reason, o.preparation_time_estimate_minutes, o.made_ready_at,
-          o.delivery_worker_id, u_dw.full_name AS delivery_worker_name,
-          o.order_placed_at, o.last_status_update_at,
-          o.created_at AS order_created_at, o.updated_at AS order_updated_at
-        FROM orders AS o
-        JOIN stores AS st ON o.store_id = st.id
-        JOIN users AS u ON o.user_id = u.id
-        LEFT JOIN users AS u_dw ON o.delivery_worker_id = u_dw.id
-        WHERE o.id = $1;
-      `;
-      const finalOrderResult = await client.query(fullOrderDetailsQuery, [orderId]);
+      const finalOrderDetails = await getFullOrderDetails(client, orderId);
 
       await client.query('COMMIT');
       res.status(200).json({
         message: 'تم تحديث حالة الطلب إلى "جاهز للتوصيل".',
-        order: finalOrderResult.rows[0]
+        order: finalOrderDetails
       });
 
     } catch (err) {
@@ -518,7 +501,6 @@ router.put(
   }
 );
 
-// PUT /api/store-owner/orders/:orderId/reject
 router.put(
   '/orders/:orderId/reject',
   authMiddleware,
@@ -588,28 +570,12 @@ router.put(
           { orderId: orderId.toString(), newStatus: 'rejected' }
       ).catch(err => console.error('Failed to send push notification on order reject:', err));
 
-      const fullOrderDetailsQuery = `
-        SELECT 
-          o.id, o.user_id, u.full_name AS customer_name, u.email AS customer_email, u.phone_number AS customer_phone,
-          o.store_id, st.name AS store_name, 
-          o.status, o.delivery_address, o.special_notes, 
-          o.items_subtotal, o.delivery_fee, o.grand_total,
-          o.rejection_reason, o.preparation_time_estimate_minutes, o.made_ready_at,
-          o.delivery_worker_id, u_dw.full_name AS delivery_worker_name,
-          o.order_placed_at, o.last_status_update_at,
-          o.created_at AS order_created_at, o.updated_at AS order_updated_at
-        FROM orders AS o
-        JOIN stores AS st ON o.store_id = st.id
-        JOIN users AS u ON o.user_id = u.id
-        LEFT JOIN users AS u_dw ON o.delivery_worker_id = u_dw.id
-        WHERE o.id = $1;
-      `;
-      const finalOrderResult = await client.query(fullOrderDetailsQuery, [orderId]);
+      const finalOrderDetails = await getFullOrderDetails(client, orderId);
 
       await client.query('COMMIT');
       res.status(200).json({
         message: 'تم رفض الطلب بنجاح.',
-        order: finalOrderResult.rows[0]
+        order: finalOrderDetails
       });
 
     } catch (err) {
