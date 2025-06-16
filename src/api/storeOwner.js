@@ -296,14 +296,19 @@ router.get(
 
       const orderDetails = orderResult.rows[0];
 
+      // --- THIS IS THE CORRECTED QUERY ---
       const orderItemsQuery = `
         SELECT 
-          oi.product_id, p.name AS product_name, p.image_url AS product_image_url,
-          oi.quantity, oi.price_at_purchase, oi.item_subtotal
+          oi.product_id, 
+          COALESCE(p.name, 'منتج محذوف') AS product_name, 
+          p.image_url AS product_image_url,
+          oi.quantity, 
+          oi.price_at_purchase, 
+          oi.item_subtotal
         FROM order_items AS oi
-        JOIN products AS p ON oi.product_id = p.id
+        LEFT JOIN products AS p ON oi.product_id = p.id
         WHERE oi.order_id = $1
-        ORDER BY p.name ASC;
+        ORDER BY COALESCE(p.name, 'منتج محذوف') ASC;
       `;
       const orderItemsResult = await client.query(orderItemsQuery, [orderId]);
 
