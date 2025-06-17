@@ -10,7 +10,7 @@
  * @param {Date} currentTime - The current JavaScript Date object.
  * @returns {boolean} - True if the store is accepting orders, false otherwise.
  */
-function isStoreCurrentlyAcceptingOrders(store, currentTime) {
+function isStoreCurrentlyAcceptingOrders(store, currentTime = new Date()) {
   // 1. Store must be active (admin approved for visibility)
   if (!store || typeof store.is_active === 'undefined' || !store.is_active) {
     return false;
@@ -44,7 +44,7 @@ function isStoreCurrentlyAcceptingOrders(store, currentTime) {
 
       const openHour = parseInt(openingTimeParts[0], 10);
       const openMinute = parseInt(openingTimeParts[1], 10);
-      
+
       const closeHour = parseInt(closingTimeParts[0], 10);
       const closeMinute = parseInt(closingTimeParts[1], 10);
 
@@ -52,14 +52,20 @@ function isStoreCurrentlyAcceptingOrders(store, currentTime) {
         // Failed to parse time components
         return false;
       }
-      
-      const currentHour = currentTime.getHours();
-      const currentMinute = currentTime.getMinutes();
-      
-      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+      // --- TIMEZONE CORRECTION START ---
+      // Adjust server's UTC time to user's local timezone (UTC+3)
+      const timeZoneOffsetHours = 3;
+      const currentUTCHour = currentTime.getUTCHours();
+      const currentUTCMinute = currentTime.getUTCMinutes();
+      const currentLocalHour = (currentUTCHour + timeZoneOffsetHours) % 24;
+
+      const currentTimeInMinutes = currentLocalHour * 60 + currentUTCMinute;
+      // --- TIMEZONE CORRECTION END ---
+
       const openTimeInMinutes = openHour * 60 + openMinute;
       let closeTimeInMinutes = closeHour * 60 + closeMinute;
-      
+
       // Handle overnight schedule (e.g., opens 22:00, closes 02:00 next day)
       if (closeTimeInMinutes < openTimeInMinutes) { 
         // Example: Open 22:00 (1320 min), Close 02:00 (120 min)
@@ -77,13 +83,6 @@ function isStoreCurrentlyAcceptingOrders(store, currentTime) {
           return false;
         }
       } else { // openTimeInMinutes === closeTimeInMinutes
-        // If opening and closing times are identical, consider the store closed unless it's a 24h convention
-        // A common convention for 24 hours is 00:00 to 00:00 or 00:00 to 23:59.
-        // If default_opening_time is "00:00" and default_closing_time is "00:00" (or "23:59"),
-        // it means it's open 24 hours. The conditions above would correctly evaluate this.
-        // E.g. 00:00 to 23:59 -> openTimeInMinutes = 0, closeTimeInMinutes = 1439. Always true if current is within.
-        // E.g. 00:00 to 00:00 (overnight logic) -> open if current >=0 or current < 0 (effectively always true).
-        // This specific 'else' (identical non-zero times) means a 0-minute window, so closed.
         return false; 
       }
     } catch (parseError) {
