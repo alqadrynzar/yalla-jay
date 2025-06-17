@@ -67,7 +67,7 @@ router.get(
           stores: [] 
         });
       }
-      
+
       const now = new Date();
       const storesWithOperationalStatus = result.rows.map(store => {
         const { 
@@ -84,7 +84,7 @@ router.get(
           is_currently_accepting_orders: isStoreCurrentlyAcceptingOrders(store, now)
         };
       });
-      
+
       res.status(200).json({
         message: 'تم استرجاع بيانات متاجر المالك بنجاح مع حالة التشغيل.',
         stores: storesWithOperationalStatus
@@ -119,7 +119,7 @@ router.get('/', async (req, res) => {
       if (isNaN(parsedRegionId) || parsedRegionId <= 0) {
         return res.status(400).json({ message: 'معرف المنطقة (region_id) يجب أن يكون رقماً صحيحاً موجباً.' });
       }
-      
+
       const regionCheck = await client.query('SELECT id FROM service_regions WHERE id = $1 AND is_active = true', [parsedRegionId]);
       if (regionCheck.rows.length === 0) {
           return res.status(200).json({
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
       whereConditions.push(`ssr.region_id = $${queryParams.length + 1}`);
       queryParams.push(parsedRegionId);
     }
-    
+
     if (store_type) {
         if (typeof store_type !== 'string' || store_type.trim() === '') {
             return res.status(400).json({ message: 'نوع المتجر (store_type) يجب أن يكون نصاً غير فارغ.' });
@@ -142,7 +142,7 @@ router.get('/', async (req, res) => {
     }
 
     const queryText = `${selectClause} ${joinClause} WHERE ${whereConditions.join(' AND ')} ${orderByClause}`;
-    
+
     const result = await client.query(queryText, queryParams);
     const now = new Date();
 
@@ -160,7 +160,7 @@ router.get('/', async (req, res) => {
         is_currently_accepting_orders: acceptingOrders
       };
     });
-    
+
     res.status(200).json({
       message: 'تم استرجاع قائمة المتاجر النشطة بنجاح.',
       stores: storesWithStatus
@@ -179,10 +179,13 @@ router.get('/:storeId', async (req, res) => {
   const client = await pool.connect();
   try {
     const query = `
-      SELECT id, name, description, address, phone_number, logo_url, created_at, store_type,
-             default_opening_time, default_closing_time, admin_forced_status, owner_choice_status, is_active
-      FROM stores 
-      WHERE id = $1 AND is_active = true
+      SELECT s.id, s.name, s.description, s.address, s.phone_number, s.logo_url, s.created_at, s.store_type,
+             s.default_opening_time, s.default_closing_time, s.admin_forced_status, s.owner_choice_status, s.is_active,
+             ARRAY_AGG(ssr.region_id) FILTER (WHERE ssr.region_id IS NOT NULL) as service_region_ids
+      FROM stores s
+      LEFT JOIN store_service_regions ssr ON s.id = ssr.store_id
+      WHERE s.id = $1 AND s.is_active = true
+      GROUP BY s.id
     `;
     const result = await client.query(query, [storeId]);
 
@@ -206,7 +209,8 @@ router.get('/:storeId', async (req, res) => {
         created_at: store.created_at,
         default_opening_time: store.default_opening_time,
         default_closing_time: store.default_closing_time,
-        is_currently_accepting_orders: acceptingOrders
+        is_currently_accepting_orders: acceptingOrders,
+        service_region_ids: store.service_region_ids || []
       }
     });
   } catch (err) {
@@ -238,7 +242,7 @@ router.get('/:storeId/categories', async (req, res) => {
 
     const query = 'SELECT id, name, description, image_url, created_at, updated_at FROM categories WHERE store_id = $1 ORDER BY name ASC';
     const result = await client.query(query, [parsedStoreId]);
-    
+
     res.status(200).json({
       message: 'تم استرجاع أقسام المتجر بنجاح.',
       categories: result.rows
@@ -260,7 +264,8 @@ router.put(
   async (req, res) => {
     const { storeId } = req.params;
     const ownerId = req.user.id;
-    const { name, description, address, phoneNumber, logoUrl } = req.body;
+    // نستقبل حقل جديد لمناطق الخدمة
+    const { name, description, address, phoneNumber, logoUrl, serviceRegionIds } = req.body;
 
     if (name !== undefined && (name === null || name.trim() === '')) {
       return res.status(400).json({ message: 'اسم المتجر لا يمكن أن يكون فارغاً إذا تم إرساله للتعديل.' });
@@ -268,16 +273,22 @@ router.put(
 
     const client = await pool.connect();
     try {
+      // بدء معاملة قاعدة البيانات
+      await client.query('BEGIN');
+
       const checkOwnerQuery = 'SELECT owner_id FROM stores WHERE id = $1';
       const checkOwnerResult = await client.query(checkOwnerQuery, [storeId]);
 
       if (checkOwnerResult.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ message: 'المتجر غير موجود.' });
       }
       if (checkOwnerResult.rows[0].owner_id !== ownerId) {
+        await client.query('ROLLBACK');
         return res.status(403).json({ message: 'الوصول مرفوض: لا تملك صلاحية تعديل هذا المتجر.' });
       }
-      
+
+      // --- تحديث الحقول الأساسية للمتجر ---
       const updateFields = [];
       const values = [];
       let paramIndex = 1;
@@ -287,31 +298,48 @@ router.put(
       if (address !== undefined) { updateFields.push(`address = $${paramIndex++}`); values.push(address); }
       if (phoneNumber !== undefined) { updateFields.push(`phone_number = $${paramIndex++}`); values.push(phoneNumber); }
       if (logoUrl !== undefined) { updateFields.push(`logo_url = $${paramIndex++}`); values.push(logoUrl); }
-      
-      if (updateFields.length === 0) {
-        const currentDataQueryNoUpdate = 'SELECT * FROM stores WHERE id = $1';
-        const currentDataResultNoUpdate = await client.query(currentDataQueryNoUpdate, [storeId]);
-        return res.status(200).json({ message: 'لا توجد بيانات للتحديث.', store: currentDataResultNoUpdate.rows[0] });
+
+      if (updateFields.length > 0) {
+        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+        values.push(storeId); 
+
+        const updateQuery = `
+          UPDATE stores 
+          SET ${updateFields.join(', ')} 
+          WHERE id = $${paramIndex} 
+        `;
+        await client.query(updateQuery, values);
       }
 
-      updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
-      values.push(storeId); 
+      // --- تحديث مناطق الخدمة المرتبطة بالمتجر ---
+      if (serviceRegionIds && Array.isArray(serviceRegionIds)) {
+        // 1. حذف كل الارتباطات الحالية للمتجر
+        await client.query('DELETE FROM store_service_regions WHERE store_id = $1', [storeId]);
 
-      const updateQuery = `
-        UPDATE stores 
-        SET ${updateFields.join(', ')} 
-        WHERE id = $${paramIndex} 
-        RETURNING *;
-      `;
-      
-      const result = await client.query(updateQuery, values);
+        // 2. إضافة الارتباطات الجديدة
+        if (serviceRegionIds.length > 0) {
+          const insertRegionPromises = serviceRegionIds.map(regionId => {
+            const insertQuery = 'INSERT INTO store_service_regions (store_id, region_id) VALUES ($1, $2)';
+            return client.query(insertQuery, [storeId, regionId]);
+          });
+          await Promise.all(insertRegionPromises);
+        }
+      }
+
+      // تأكيد المعاملة
+      await client.query('COMMIT');
+
+      // استرجاع بيانات المتجر المحدثة لإعادتها
+      const finalResultQuery = 'SELECT * FROM stores WHERE id = $1';
+      const finalResult = await client.query(finalResultQuery, [storeId]);
 
       res.status(200).json({
         message: 'تم تحديث بيانات المتجر بنجاح.',
-        store: result.rows[0]
+        store: finalResult.rows[0]
       });
 
     } catch (err) {
+      await client.query('ROLLBACK');
       console.error('Error updating store:', err);
       res.status(500).json({ message: 'حدث خطأ في الخادم أثناء تحديث المتجر.' });
     } finally {
