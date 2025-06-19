@@ -55,7 +55,7 @@ function isStoreCurrentlyAcceptingOrders(store, currentTime = new Date()) {
 
       // --- TIMEZONE CORRECTION START ---
       // Adjust server's UTC time to user's local timezone (UTC+3)
-      const timeZoneOffsetHours = 3;
+      const timeZoneOffsetHours = 0;
       const currentUTCHour = currentTime.getUTCHours();
       const currentUTCMinute = currentTime.getUTCMinutes();
       const currentLocalHour = (currentUTCHour + timeZoneOffsetHours) % 24;
