@@ -12,28 +12,63 @@ router.post(
   authMiddleware,
   checkRole('store_owner'),
   async (req, res) => {
-    const { name, description, address, phoneNumber, logoUrl, store_type } = req.body;
+    // استقبال الحقول الجديدة ومنها مصفوفة مناطق الخدمة
+    const { name, description, address, phoneNumber, logoUrl, store_type, serviceRegionIds } = req.body;
     const ownerId = req.user.id; 
 
     if (!name) {
       return res.status(400).json({ message: 'اسم المتجر حقل مطلوب.' });
     }
+    
+    if (serviceRegionIds && (!Array.isArray(serviceRegionIds) || serviceRegionIds.some(isNaN))) {
+        return res.status(400).json({ message: 'مناطق الخدمة (serviceRegionIds) يجب أن تكون مصفوفة من الأرقام.' });
+    }
 
     const client = await pool.connect();
     try {
-      const query = `
+      // بدء معاملة قاعدة البيانات
+      await client.query('BEGIN');
+
+      const storeInsertQuery = `
         INSERT INTO stores (owner_id, name, description, address, phone_number, logo_url, is_active, store_type)
         VALUES ($1, $2, $3, $4, $5, $6, false, $7) 
         RETURNING *; 
       `;
-      const values = [ownerId, name, description, address, phoneNumber, logoUrl, store_type];
-      const result = await client.query(query, values);
+      const storeInsertValues = [ownerId, name, description, address, phoneNumber, logoUrl, store_type];
+      const result = await client.query(storeInsertQuery, storeInsertValues);
+      const newStore = result.rows[0];
+
+      // --- إضافة مناطق الخدمة المرتبطة بالمتجر ---
+      if (serviceRegionIds && serviceRegionIds.length > 0) {
+        const storeId = newStore.id;
+        const insertRegionPromises = serviceRegionIds.map(regionId => {
+          const insertQuery = 'INSERT INTO store_service_regions (store_id, region_id) VALUES ($1, $2)';
+          return client.query(insertQuery, [storeId, regionId]);
+        });
+        await Promise.all(insertRegionPromises);
+      }
+
+      // تأكيد المعاملة
+      await client.query('COMMIT');
+      
+      // استرجاع بيانات المتجر المحدثة بالكامل مع مناطق الخدمة لإعادتها
+      const finalResultQuery = `
+        SELECT s.*, 
+               ARRAY_AGG(ssr.region_id) FILTER (WHERE ssr.region_id IS NOT NULL) as service_region_ids
+        FROM stores s
+        LEFT JOIN store_service_regions ssr ON s.id = ssr.store_id
+        WHERE s.id = $1
+        GROUP BY s.id;
+      `;
+      const finalResult = await client.query(finalResultQuery, [newStore.id]);
 
       res.status(201).json({
         message: 'تم إرسال طلب إنشاء المتجر بنجاح. سيتم مراجعته من قبل الإدارة قريباً.',
-        store: result.rows[0]
+        store: finalResult.rows[0]
       });
     } catch (err) {
+      // في حال حدوث أي خطأ، يتم التراجع عن كل التغييرات
+      await client.query('ROLLBACK');
       console.error('Error creating store:', err);
       res.status(500).json({ message: 'حدث خطأ في الخادم أثناء إنشاء المتجر.' });
     } finally {
