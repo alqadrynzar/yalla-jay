@@ -18,19 +18,18 @@ const sendPushNotification = async (userId, title, body, data = {}) => {
       return;
     }
 
-    // The message payload for sendEachForMulticast is an object
+    // Send a data-only message by putting title and body inside the data payload
     const message = {
-      notification: {
+      data: {
+        ...data, // Existing data like orderId
         title: title,
         body: body,
       },
-      data: data,
       tokens: tokens,
     };
 
     console.log(`Attempting to send push notification to user_id: ${userId} for title: ${title}`);
 
-    // CORRECTED: Using sendEachForMulticast
     const response = await admin.messaging().sendEachForMulticast(message);
 
     console.log(`${response.successCount} messages were sent successfully`);
