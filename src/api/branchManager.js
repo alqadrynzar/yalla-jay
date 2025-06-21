@@ -1,7 +1,8 @@
 const express = require('express');
-const pool = require('../config/database.js');
+const pool =require('../config/database.js');
 const authMiddleware = require('../middleware/authMiddleware.js');
 const checkRole = require('../middleware/authorization.js');
+const { sendPushNotification } = require('../services/notificationService.js');
 
 const router = express.Router();
 const ALLOWED_OVERRIDE_STATUSES = ['AUTO', 'FORCE_OPEN', 'FORCE_CLOSED'];
@@ -302,7 +303,7 @@ router.put(
     try {
       await client.query('BEGIN');
 
-      const orderCheckQuery = 'SELECT id, status, store_id FROM orders WHERE id = $1;';
+      const orderCheckQuery = 'SELECT id, status, store_id, user_id FROM orders WHERE id = $1;';
       const orderCheckResult = await client.query(orderCheckQuery, [orderId]);
 
       if (orderCheckResult.rows.length === 0) {
@@ -329,7 +330,7 @@ router.put(
         return res.status(400).json({ message: `لا يمكن إسناد هذا الطلب. يجب أن يكون في حالة "ready_for_delivery".` });
       }
 
-      const workerCheckQuery = 'SELECT user_role FROM users WHERE id = $1';
+      const workerCheckQuery = 'SELECT user_role, id FROM users WHERE id = $1';
       const workerCheckResult = await client.query(workerCheckQuery, [delivery_worker_id]);
 
       if (workerCheckResult.rows.length === 0 || workerCheckResult.rows[0].user_role !== 'delivery_worker') {
@@ -346,13 +347,18 @@ router.put(
         RETURNING *;
       `;
       const updatedOrderResult = await client.query(updateOrderQuery, [delivery_worker_id, orderId]);
+      const updatedOrder = updatedOrderResult.rows[0];
+
+      const dwNotificationMessage = `تم إسناد مهمة توصيل جديدة لك (طلب رقم #${updatedOrder.id}).`;
+      const customerNotificationMessage = `طلبك رقم #${updatedOrder.id} تم إسناده لموظف التوصيل وهو في طريقه إليك قريباً.`;
       
-      // لا توجد حاليًا آلية لإرسال إشعارات هنا، يمكن إضافتها لاحقًا
+      sendPushNotification(delivery_worker_id, 'مهمة توصيل جديدة', dwNotificationMessage, { orderId: updatedOrder.id.toString() }).catch(console.error);
+      sendPushNotification(updatedOrder.user_id, 'طلبك قيد التوصيل', customerNotificationMessage, { orderId: updatedOrder.id.toString(), newStatus: 'assigned_for_delivery' }).catch(console.error);
       
       await client.query('COMMIT');
       res.status(200).json({
         message: 'تم إسناد الطلب إلى موظف التوصيل بنجاح.',
-        order: updatedOrderResult.rows[0]
+        order: updatedOrder
       });
 
     } catch (err) {
@@ -360,6 +366,94 @@ router.put(
       console.error('Error assigning order by branch manager:', err);
       if (err.code === '22P02') {
         return res.status(400).json({ message: 'معرف الطلب أو معرف موظف التوصيل غير صالح.' });
+      }
+      res.status(500).json({ message: 'حدث خطأ في الخادم.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// PUT /api/branch-manager/orders/:orderId/force-cancel - إلغاء طلب قيد التوصيل
+router.put(
+  '/orders/:orderId/force-cancel',
+  authMiddleware,
+  checkRole('branch_manager'),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const { cancellation_reason } = req.body;
+    const { managedRegions } = req.user;
+
+    if (!cancellation_reason || cancellation_reason.trim() === '') {
+      return res.status(400).json({ message: 'سبب الإلغاء حقل مطلوب.' });
+    }
+
+    if (!managedRegions || managedRegions.length === 0) {
+        return res.status(403).json({ message: 'الوصول مرفوض: أنت غير معين لإدارة أي منطقة خدمة.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const orderQuery = 'SELECT id, status, user_id, delivery_worker_id, store_id FROM orders WHERE id = $1 FOR UPDATE';
+      const orderResult = await client.query(orderQuery, [orderId]);
+
+      if (orderResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'الطلب غير موجود.' });
+      }
+      
+      const currentOrder = orderResult.rows[0];
+      const storeId = currentOrder.store_id;
+
+      const authCheckQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM store_service_regions WHERE store_id = $1 AND region_id = ANY($2::int[])
+        );
+      `;
+      const authCheckResult = await client.query(authCheckQuery, [storeId, managedRegions]);
+      if (!authCheckResult.rows[0].exists) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ message: 'الوصول مرفوض: هذا الطلب لا يقع ضمن مناطق الخدمة الخاصة بك.' });
+      }
+      
+      if (!['assigned_for_delivery', 'out_for_delivery', 'ready_for_delivery'].includes(currentOrder.status)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: `لا يمكن إلغاء هذا الطلب قسرياً. الحالة الحالية للطلب هي: "${currentOrder.status}".` });
+      }
+      
+      let reasonForDb = `(إلغاء من مدير الفرع): ${cancellation_reason}`;
+
+      const updateOrderQuery = `
+        UPDATE orders
+        SET status = 'cancelled_by_admin',
+            rejection_reason = $1,
+            last_status_update_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *;
+      `;
+      const updatedOrderResult = await client.query(updateOrderQuery, [reasonForDb, orderId]);
+      const cancelledOrder = updatedOrderResult.rows[0];
+
+      // إرسال الإشعارات للأطراف المعنية
+      const { user_id, delivery_worker_id } = currentOrder;
+      sendPushNotification(user_id, 'تم إلغاء طلبك', `للأسف، تم إلغاء طلبك رقم #${cancelledOrder.id} لأسباب تشغيلية.`, { orderId: cancelledOrder.id.toString(), newStatus: 'cancelled_by_admin' }).catch(console.error);
+      if (delivery_worker_id) {
+        sendPushNotification(delivery_worker_id, 'تم إلغاء مهمة', `تم إلغاء مهمة التوصيل للطلب رقم #${cancelledOrder.id}.`, { orderId: cancelledOrder.id.toString() }).catch(console.error);
+      }
+      
+      await client.query('COMMIT');
+      res.status(200).json({
+        message: 'تم إلغاء الطلب بنجاح.',
+        order: cancelledOrder
+      });
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Error force-cancelling order by branch manager:', err);
+      if (err.code === '22P02') {
+        return res.status(400).json({ message: 'معرف الطلب غير صالح.' });
       }
       res.status(500).json({ message: 'حدث خطأ في الخادم.' });
     } finally {
