@@ -487,7 +487,7 @@ router.put(
     const { userId } = req.params;
     const { newRole } = req.body;
 
-    const allowedRoles = ['customer', 'store_owner', 'delivery_worker', 'admin'];
+    const allowedRoles = ['customer', 'store_owner', 'delivery_worker', 'admin', 'branch_manager'];
     if (!newRole || !allowedRoles.includes(newRole)) {
       return res.status(400).json({ message: 'الدور المحدد غير صالح.' });
     }
