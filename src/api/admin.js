@@ -6,6 +6,7 @@ const { sendPushNotification } = require('../services/notificationService.js');
 
 const router = express.Router();
 
+// ... (All other routes remain unchanged) ...
 const ALLOWED_STORE_TYPES = [
   'grocery_supermarket',
   'restaurant',
@@ -730,9 +731,9 @@ router.get(
 );
 
 router.get(
-  '/orders',
+  '/orders-admin',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { regionIds, status, storeId, customerId } = req.query;
 
@@ -771,7 +772,7 @@ router.get(
         }).filter(id => id !== null);
         
         if (regionIdsArray.length > 0) {
-          whereClauses.push(`ssr.service_region_id = ANY($${values.length + 1})`);
+          whereClauses.push(`ssr.service_region_id = ANY($${values.length + 1}::int[])`);
           values.push(regionIdsArray);
         }
       }
