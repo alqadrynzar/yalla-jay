@@ -280,5 +280,93 @@ router.put(
   }
 );
 
+// PUT /api/branch-manager/orders/:orderId/assign-delivery - إسناد طلب لموظف توصيل
+router.put(
+  '/orders/:orderId/assign-delivery',
+  authMiddleware,
+  checkRole('branch_manager'),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const { delivery_worker_id } = req.body;
+    const { managedRegions } = req.user;
+
+    if (!delivery_worker_id || !Number.isInteger(delivery_worker_id) || delivery_worker_id <= 0) {
+      return res.status(400).json({ message: 'معرف موظف التوصيل مطلوب ويجب أن يكون رقماً صحيحياً موجباً.' });
+    }
+
+    if (!managedRegions || managedRegions.length === 0) {
+        return res.status(403).json({ message: 'الوصول مرفوض: أنت غير معين لإدارة أي منطقة خدمة.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const orderCheckQuery = 'SELECT id, status, store_id FROM orders WHERE id = $1;';
+      const orderCheckResult = await client.query(orderCheckQuery, [orderId]);
+
+      if (orderCheckResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'الطلب غير موجود.' });
+      }
+      
+      const currentOrder = orderCheckResult.rows[0];
+      const storeId = currentOrder.store_id;
+      
+      const authCheckQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM store_service_regions WHERE store_id = $1 AND region_id = ANY($2::int[])
+        );
+      `;
+      const authCheckResult = await client.query(authCheckQuery, [storeId, managedRegions]);
+      if (!authCheckResult.rows[0].exists) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ message: 'الوصول مرفوض: هذا الطلب لا يقع ضمن مناطق الخدمة الخاصة بك.' });
+      }
+
+      if (currentOrder.status !== 'ready_for_delivery') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: `لا يمكن إسناد هذا الطلب. يجب أن يكون في حالة "ready_for_delivery".` });
+      }
+
+      const workerCheckQuery = 'SELECT user_role FROM users WHERE id = $1';
+      const workerCheckResult = await client.query(workerCheckQuery, [delivery_worker_id]);
+
+      if (workerCheckResult.rows.length === 0 || workerCheckResult.rows[0].user_role !== 'delivery_worker') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: `المستخدم بالمعرف ${delivery_worker_id} ليس موظف توصيل صالح.` });
+      }
+
+      const updateOrderQuery = `
+        UPDATE orders
+        SET status = 'assigned_for_delivery',
+            delivery_worker_id = $1,
+            last_status_update_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *;
+      `;
+      const updatedOrderResult = await client.query(updateOrderQuery, [delivery_worker_id, orderId]);
+      
+      // لا توجد حاليًا آلية لإرسال إشعارات هنا، يمكن إضافتها لاحقًا
+      
+      await client.query('COMMIT');
+      res.status(200).json({
+        message: 'تم إسناد الطلب إلى موظف التوصيل بنجاح.',
+        order: updatedOrderResult.rows[0]
+      });
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Error assigning order by branch manager:', err);
+      if (err.code === '22P02') {
+        return res.status(400).json({ message: 'معرف الطلب أو معرف موظف التوصيل غير صالح.' });
+      }
+      res.status(500).json({ message: 'حدث خطأ في الخادم.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 
 module.exports = router;
