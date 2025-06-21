@@ -84,7 +84,7 @@ const isValidTimeFormat = (timeString) => {
 router.put(
   '/stores/:storeId/approve',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const client = await pool.connect();
@@ -119,7 +119,7 @@ router.put(
 router.put(
   '/stores/:storeId/type',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const { store_type } = req.body;
@@ -168,7 +168,7 @@ router.put(
 router.put(
   '/stores/:storeId/commission-rate',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const { commission_rate } = req.body;
@@ -215,7 +215,7 @@ router.put(
 router.put(
   '/stores/:storeId/schedule',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     let { default_opening_time, default_closing_time } = req.body;
@@ -272,7 +272,7 @@ router.put(
 router.put(
   '/stores/:storeId/override-status',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const { status } = req.body;
@@ -322,7 +322,7 @@ router.put(
 router.get(
   '/stores/:storeId/operational-settings',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const parsedStoreId = parseInt(storeId);
@@ -371,7 +371,7 @@ router.get(
 router.post(
   '/commission-reports/generate',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId, periodStartDate, periodEndDate } = req.body;
 
@@ -533,7 +533,7 @@ router.post(
 router.get(
   '/commission-reports/:reportId',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { reportId } = req.params;
     const parsedReportId = parseInt(reportId);
@@ -617,7 +617,7 @@ router.get(
 router.put(
   '/commission-reports/:reportId/finalize',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { reportId } = req.params;
     const adminUserId = req.user.id;
@@ -656,7 +656,8 @@ router.put(
       let paramIndex = 4;
 
       if (notes !== undefined) {
-        updateFields.push(`notes = $${paramIndex++}`);
+        updateFields.push(`notes = $${paramIndex}`);
+        paramIndex++;
         updateValues.push(notes);
       }
 
@@ -693,7 +694,7 @@ router.put(
 router.get(
   '/orders/waiting',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const client = await pool.connect();
     try {
@@ -729,7 +730,6 @@ router.get(
   }
 );
 
-// THIS IS THE ROUTE THAT SHOULD BE MODIFIED
 router.get(
   '/orders',
   authMiddleware,
@@ -772,7 +772,7 @@ router.get(
 router.put(
   '/orders/:orderId/assign-delivery',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { orderId } = req.params;
     const { delivery_worker_id } = req.body;
@@ -889,7 +889,7 @@ router.put(
 router.put(
   '/orders/:orderId/cancel',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { orderId } = req.params;
     const client = await pool.connect();
@@ -978,7 +978,7 @@ router.put(
 router.put(
   '/orders/:orderId/force-cancel',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { orderId } = req.params;
     const { cancellation_reason } = req.body;
@@ -1068,13 +1068,13 @@ router.put(
     }
   }
 );
-// This is a new route handler for GET /orders-admin
+
 router.post(
   '/service-regions',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
-    const { name, description, is_active = true, support_phone_number } = req.body;
+    const { name, description, is_active = true } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ message: 'اسم منطقة الخدمة (name) حقل نصي مطلوب.' });
@@ -1089,11 +1089,11 @@ router.post(
     const client = await pool.connect();
     try {
       const query = `
-        INSERT INTO service_regions (name, description, is_active, support_phone_number)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO service_regions (name, description, is_active)
+        VALUES ($1, $2, $3)
         RETURNING *;
       `;
-      const result = await client.query(query, [name.trim(), description, is_active, support_phone_number]);
+      const result = await client.query(query, [name.trim(), description, is_active]);
       res.status(201).json({
         message: 'تم إنشاء منطقة الخدمة بنجاح.',
         service_region: result.rows[0]
@@ -1110,11 +1110,10 @@ router.post(
   }
 );
 
-// This is a new route handler for GET /service-regions
 router.get(
   '/service-regions',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const client = await pool.connect();
     try {
@@ -1136,7 +1135,7 @@ router.get(
 router.get(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1169,7 +1168,7 @@ router.get(
 router.put(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1252,7 +1251,7 @@ router.put(
 router.delete(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1285,7 +1284,7 @@ router.delete(
 router.post(
   '/stores/:storeId/service-regions',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const { region_id } = req.body;
@@ -1361,13 +1360,13 @@ router.post(
 router.get(
   '/stores/:storeId/service-regions',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId } = req.params;
     const parsedStoreId = parseInt(storeId);
 
     if (isNaN(parsedStoreId)) {
-      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحياً.' });
+      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحاً.' });
     }
 
     const client = await pool.connect();
@@ -1411,18 +1410,18 @@ router.get(
 router.delete(
   '/stores/:storeId/service-regions/:regionId',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
     const { storeId, regionId } = req.params;
 
     const parsedStoreId = parseInt(storeId);
     if (isNaN(parsedStoreId)) {
-      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحياً.' });
+      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحاً.' });
     }
 
     const parsedRegionId = parseInt(regionId);
     if (isNaN(parsedRegionId)) {
-      return res.status(400).json({ message: 'معرف منطقة الخدمة (regionId) يجب أن يكون رقماً صحيحياً.' });
+      return res.status(400).json({ message: 'معرف منطقة الخدمة (regionId) يجب أن يكون رقماً صحيحاً.' });
     }
 
     const client = await pool.connect();
@@ -1461,7 +1460,7 @@ router.delete(
   }
 );
 
-router.get('/test', authMiddleware, checkRole(['admin']), (req, res) => {
+router.get('/test', authMiddleware, checkRole('admin'), (req, res) => {
   res.send('Admin route test is working!');
 });
 
