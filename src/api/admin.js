@@ -656,8 +656,7 @@ router.put(
       let paramIndex = 4;
 
       if (notes !== undefined) {
-        updateFields.push(`notes = $${paramIndex}`);
-        paramIndex++;
+        updateFields.push(`notes = $${paramIndex++}`);
         updateValues.push(notes);
       }
 
@@ -735,39 +734,80 @@ router.get(
   authMiddleware,
   checkRole('admin'),
   async (req, res) => {
+    const { regionIds, status, storeId, customerId } = req.query;
+
     const client = await pool.connect();
     try {
-      const query = `
-        SELECT
+      let query = `
+        SELECT DISTINCT
           o.id AS order_id,
-          u.full_name AS customer_name,
-          s.name AS store_name,
-          o.store_id,
-          o.grand_total,
           o.status,
-          o.order_placed_at,
-          o.last_status_update_at
-        FROM orders AS o
-        JOIN users AS u ON o.user_id = u.id
-        JOIN stores AS s ON o.store_id = s.id
-        ORDER BY o.order_placed_at DESC;
+          o.grand_total,
+          o.created_at,
+          s.id AS store_id,
+          s.name AS store_name,
+          u.id AS customer_id,
+          u.full_name AS customer_name
+        FROM
+          orders o
+        JOIN
+          stores s ON o.store_id = s.id
+        JOIN
+          users u ON o.customer_id = u.id
+        LEFT JOIN
+          store_service_regions ssr ON o.store_id = ssr.store_id
       `;
-      const result = await client.query(query);
 
-      res.status(200).json({
-        message: 'تم استرجاع قائمة جميع الطلبات بنجاح.',
-        orders: result.rows
-      });
+      const whereClauses = [];
+      const values = [];
 
-    } catch (err)
-{
-      console.error('Error fetching all orders for admin:', err);
-      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء جلب جميع الطلبات.' });
+      if (regionIds) {
+        const regionIdsArray = regionIds.split(',').map(id => {
+            const parsedId = parseInt(id.trim());
+            if (isNaN(parsedId)) {
+                return null;
+            }
+            return parsedId;
+        }).filter(id => id !== null);
+        
+        if (regionIdsArray.length > 0) {
+          whereClauses.push(`ssr.service_region_id = ANY($${values.length + 1})`);
+          values.push(regionIdsArray);
+        }
+      }
+
+      if (status) {
+        whereClauses.push(`o.status = $${values.length + 1}`);
+        values.push(status);
+      }
+      
+      if (storeId) {
+        whereClauses.push(`o.store_id = $${values.length + 1}`);
+        values.push(parseInt(storeId));
+      }
+
+      if (customerId) {
+        whereClauses.push(`o.customer_id = $${values.length + 1}`);
+        values.push(parseInt(customerId));
+      }
+
+      if (whereClauses.length > 0) {
+        query += ` WHERE ${whereClauses.join(' AND ')}`;
+      }
+
+      query += ' ORDER BY o.created_at DESC';
+
+      const result = await client.query(query, values);
+      res.status(200).json(result.rows);
+    } catch (err) {
+      console.error('Error fetching orders for admin:', err);
+      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء جلب الطلبات.' });
     } finally {
       client.release();
     }
   }
 );
+
 
 router.put(
   '/orders/:orderId/assign-delivery',
@@ -1068,13 +1108,13 @@ router.put(
     }
   }
 );
-
+// This is a new route handler for GET /orders-admin
 router.post(
   '/service-regions',
   authMiddleware,
   checkRole('admin'),
   async (req, res) => {
-    const { name, description, is_active = true } = req.body;
+    const { name, description, is_active = true, support_phone_number } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ message: 'اسم منطقة الخدمة (name) حقل نصي مطلوب.' });
@@ -1089,11 +1129,11 @@ router.post(
     const client = await pool.connect();
     try {
       const query = `
-        INSERT INTO service_regions (name, description, is_active)
-        VALUES ($1, $2, $3)
+        INSERT INTO service_regions (name, description, is_active, support_phone_number)
+        VALUES ($1, $2, $3, $4)
         RETURNING *;
       `;
-      const result = await client.query(query, [name.trim(), description, is_active]);
+      const result = await client.query(query, [name.trim(), description, is_active, support_phone_number]);
       res.status(201).json({
         message: 'تم إنشاء منطقة الخدمة بنجاح.',
         service_region: result.rows[0]
@@ -1110,6 +1150,7 @@ router.post(
   }
 );
 
+// This is a new route handler for GET /service-regions
 router.get(
   '/service-regions',
   authMiddleware,
@@ -1366,7 +1407,7 @@ router.get(
     const parsedStoreId = parseInt(storeId);
 
     if (isNaN(parsedStoreId)) {
-      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحاً.' });
+      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحياً.' });
     }
 
     const client = await pool.connect();
@@ -1416,12 +1457,12 @@ router.delete(
 
     const parsedStoreId = parseInt(storeId);
     if (isNaN(parsedStoreId)) {
-      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحاً.' });
+      return res.status(400).json({ message: 'معرف المتجر (storeId) يجب أن يكون رقماً صحيحياً.' });
     }
 
     const parsedRegionId = parseInt(regionId);
     if (isNaN(parsedRegionId)) {
-      return res.status(400).json({ message: 'معرف منطقة الخدمة (regionId) يجب أن يكون رقماً صحيحاً.' });
+      return res.status(400).json({ message: 'معرف منطقة الخدمة (regionId) يجب أن يكون رقماً صحيحياً.' });
     }
 
     const client = await pool.connect();
