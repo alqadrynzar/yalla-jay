@@ -6,6 +6,12 @@ const checkRole = require('../middleware/authorization.js');
 const router = express.Router();
 const ALLOWED_OVERRIDE_STATUSES = ['AUTO', 'FORCE_OPEN', 'FORCE_CLOSED'];
 
+const isValidTimeFormat = (timeString) => {
+  if (timeString === null || timeString === '') return true;
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$/;
+  return timeRegex.test(timeString);
+};
+
 // GET /api/branch-manager/orders - عرض الطلبات ضمن مناطق خدمة مدير الفرع
 router.get(
   '/orders',
@@ -190,6 +196,82 @@ router.put(
       console.error('Error updating store override status by branch manager:', err);
       if (err.code === '22P02') {
         return res.status(400).json({ message: 'معرف المتجر غير صالح.' });
+      }
+      res.status(500).json({ message: 'حدث خطأ في الخادم.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// PUT /api/branch-manager/stores/:storeId/schedule - تحديد أوقات العمل الافتراضية
+router.put(
+  '/stores/:storeId/schedule',
+  authMiddleware,
+  checkRole('branch_manager'),
+  async (req, res) => {
+    const { storeId } = req.params;
+    let { default_opening_time, default_closing_time } = req.body;
+    const { managedRegions } = req.user;
+
+    if (default_opening_time !== undefined && !isValidTimeFormat(default_opening_time)) {
+      return res.status(400).json({ message: 'صيغة وقت الفتح الافتراضي غير صالحة. استخدم HH:MM.' });
+    }
+    if (default_closing_time !== undefined && !isValidTimeFormat(default_closing_time)) {
+      return res.status(400).json({ message: 'صيغة وقت الإغلاق الافتراضي غير صالحة. استخدم HH:MM.' });
+    }
+
+    if (default_opening_time === '') default_opening_time = null;
+    if (default_closing_time === '') default_closing_time = null;
+
+    if (!managedRegions || managedRegions.length === 0) {
+      return res.status(403).json({ message: 'الوصول مرفوض: أنت غير معين لإدارة أي منطقة خدمة.' });
+    }
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const authCheckQuery = `
+        SELECT EXISTS (
+          SELECT 1
+          FROM store_service_regions
+          WHERE store_id = $1 AND region_id = ANY($2::int[])
+        );
+      `;
+      const authCheckResult = await client.query(authCheckQuery, [storeId, managedRegions]);
+      const isAuthorized = authCheckResult.rows[0].exists;
+
+      if (!isAuthorized) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ message: 'الوصول مرفوض: لا تملك صلاحية إدارة هذا المتجر.' });
+      }
+
+      const updateQuery = `
+        UPDATE stores
+        SET
+          default_opening_time = $1,
+          default_closing_time = $2
+        WHERE id = $3
+        RETURNING id, name, default_opening_time, default_closing_time;
+      `;
+      const result = await client.query(updateQuery, [default_opening_time, default_closing_time, storeId]);
+      
+      if (result.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'المتجر غير موجود.' });
+      }
+      
+      await client.query('COMMIT');
+      res.status(200).json({
+        message: 'تم تحديث الجدول الزمني الافتراضي للمتجر بنجاح.',
+        store: result.rows[0],
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Error updating store schedule by branch manager:', err);
+      if (err.code === '22P02') {
+        return res.status(400).json({ message: 'معرف المتجر أو إحدى قيم الوقت غير صالحة.' });
       }
       res.status(500).json({ message: 'حدث خطأ في الخادم.' });
     } finally {
