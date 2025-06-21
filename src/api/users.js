@@ -494,7 +494,7 @@ router.put(
 
     const client = await pool.connect();
     try {
-      const query = 'UPDATE users SET user_role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, full_name, email, user_role';
+      const query = 'UPDATE users SET user_role = $1 WHERE id = $2 RETURNING id, full_name, email, user_role';
       const result = await client.query(query, [newRole, userId]);
 
       if (result.rows.length === 0) {
