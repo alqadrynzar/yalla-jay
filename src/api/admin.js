@@ -656,8 +656,7 @@ router.put(
       let paramIndex = 4;
 
       if (notes !== undefined) {
-        updateFields.push(`notes = $${paramIndex}`);
-        paramIndex++;
+        updateFields.push(`notes = $${paramIndex++}`);
         updateValues.push(notes);
       }
 
@@ -1459,6 +1458,100 @@ router.delete(
     }
   }
 );
+
+// --- Branch Manager Administration ---
+router.post(
+  '/branch-managers/:userId/regions',
+  authMiddleware,
+  checkRole('admin'),
+  async (req, res) => {
+    const { userId } = req.params;
+    const { region_id } = req.body;
+
+    if (!region_id) {
+      return res.status(400).json({ message: 'حقل "region_id" مطلوب.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      const userCheck = await client.query('SELECT user_role FROM users WHERE id = $1', [userId]);
+      if (userCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'المستخدم المحدد غير موجود.' });
+      }
+      if (userCheck.rows[0].user_role !== 'branch_manager') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'لا يمكن إسناد مناطق إلا للمستخدمين من دور "مدير فرع".' });
+      }
+
+      const regionCheck = await client.query('SELECT id FROM service_regions WHERE id = $1 AND is_active = true', [region_id]);
+      if (regionCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'منطقة الخدمة غير موجودة أو غير نشطة.' });
+      }
+
+      const insertQuery = `
+        INSERT INTO branch_manager_regions (user_id, region_id)
+        VALUES ($1, $2)
+        RETURNING *;
+      `;
+      const result = await client.query(insertQuery, [userId, region_id]);
+      
+      await client.query('COMMIT');
+      res.status(201).json({
+        message: 'تم ربط مدير الفرع بمنطقة الخدمة بنجاح.',
+        assignment: result.rows[0]
+      });
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      if (err.code === '23505') { // unique_violation
+        return res.status(409).json({ message: 'هذا المدير معين بالفعل لهذه المنطقة.' });
+      }
+      console.error('Error assigning region to branch manager:', err);
+      res.status(500).json({ message: 'حدث خطأ في الخادم.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.delete(
+  '/branch-managers/:userId/regions/:regionId',
+  authMiddleware,
+  checkRole('admin'),
+  async (req, res) => {
+    const { userId, regionId } = req.params;
+
+    const client = await pool.connect();
+    try {
+      const deleteQuery = `
+        DELETE FROM branch_manager_regions
+        WHERE user_id = $1 AND region_id = $2
+        RETURNING *;
+      `;
+      const result = await client.query(deleteQuery, [userId, regionId]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: 'لم يتم العثور على هذا التعيين لحذفه.' });
+      }
+
+      res.status(200).json({
+        message: 'تم إلغاء ربط مدير الفرع من منطقة الخدمة بنجاح.',
+        unlinked_assignment: result.rows[0]
+      });
+
+    } catch (err) {
+      console.error('Error un-assigning region from branch manager:', err);
+      res.status(500).json({ message: 'حدث خطأ في الخادم.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 
 router.get('/test', authMiddleware, checkRole('admin'), (req, res) => {
   res.send('Admin route test is working!');
