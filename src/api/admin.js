@@ -6,7 +6,6 @@ const { sendPushNotification } = require('../services/notificationService.js');
 
 const router = express.Router();
 
-// ... (All other routes remain unchanged) ...
 const ALLOWED_STORE_TYPES = [
   'grocery_supermarket',
   'restaurant',
@@ -85,7 +84,7 @@ const isValidTimeFormat = (timeString) => {
 router.put(
   '/stores/:storeId/approve',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const client = await pool.connect();
@@ -120,7 +119,7 @@ router.put(
 router.put(
   '/stores/:storeId/type',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const { store_type } = req.body;
@@ -169,7 +168,7 @@ router.put(
 router.put(
   '/stores/:storeId/commission-rate',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const { commission_rate } = req.body;
@@ -216,7 +215,7 @@ router.put(
 router.put(
   '/stores/:storeId/schedule',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     let { default_opening_time, default_closing_time } = req.body;
@@ -273,7 +272,7 @@ router.put(
 router.put(
   '/stores/:storeId/override-status',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const { status } = req.body;
@@ -323,7 +322,7 @@ router.put(
 router.get(
   '/stores/:storeId/operational-settings',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const parsedStoreId = parseInt(storeId);
@@ -372,7 +371,7 @@ router.get(
 router.post(
   '/commission-reports/generate',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId, periodStartDate, periodEndDate } = req.body;
 
@@ -534,7 +533,7 @@ router.post(
 router.get(
   '/commission-reports/:reportId',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { reportId } = req.params;
     const parsedReportId = parseInt(reportId);
@@ -618,7 +617,7 @@ router.get(
 router.put(
   '/commission-reports/:reportId/finalize',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { reportId } = req.params;
     const adminUserId = req.user.id;
@@ -694,7 +693,7 @@ router.put(
 router.get(
   '/orders/waiting',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const client = await pool.connect();
     try {
@@ -730,90 +729,50 @@ router.get(
   }
 );
 
+// THIS IS THE ROUTE THAT SHOULD BE MODIFIED
 router.get(
-  '/orders-admin',
+  '/orders',
   authMiddleware,
-  checkRole(['admin']),
+  checkRole('admin'),
   async (req, res) => {
-    const { regionIds, status, storeId, customerId } = req.query;
-
     const client = await pool.connect();
     try {
-      let query = `
-        SELECT DISTINCT
+      const query = `
+        SELECT
           o.id AS order_id,
-          o.status,
-          o.grand_total,
-          o.created_at,
-          s.id AS store_id,
+          u.full_name AS customer_name,
           s.name AS store_name,
-          u.id AS customer_id,
-          u.full_name AS customer_name
-        FROM
-          orders o
-        JOIN
-          stores s ON o.store_id = s.id
-        JOIN
-          users u ON o.customer_id = u.id
-        LEFT JOIN
-          store_service_regions ssr ON o.store_id = ssr.store_id
+          o.store_id,
+          o.grand_total,
+          o.status,
+          o.order_placed_at,
+          o.last_status_update_at
+        FROM orders AS o
+        JOIN users AS u ON o.user_id = u.id
+        JOIN stores AS s ON o.store_id = s.id
+        ORDER BY o.order_placed_at DESC;
       `;
+      const result = await client.query(query);
 
-      const whereClauses = [];
-      const values = [];
+      res.status(200).json({
+        message: 'تم استرجاع قائمة جميع الطلبات بنجاح.',
+        orders: result.rows
+      });
 
-      if (regionIds) {
-        const regionIdsArray = regionIds.split(',').map(id => {
-            const parsedId = parseInt(id.trim());
-            if (isNaN(parsedId)) {
-                return null;
-            }
-            return parsedId;
-        }).filter(id => id !== null);
-        
-        if (regionIdsArray.length > 0) {
-          whereClauses.push(`ssr.service_region_id = ANY($${values.length + 1}::int[])`);
-          values.push(regionIdsArray);
-        }
-      }
-
-      if (status) {
-        whereClauses.push(`o.status = $${values.length + 1}`);
-        values.push(status);
-      }
-      
-      if (storeId) {
-        whereClauses.push(`o.store_id = $${values.length + 1}`);
-        values.push(parseInt(storeId));
-      }
-
-      if (customerId) {
-        whereClauses.push(`o.customer_id = $${values.length + 1}`);
-        values.push(parseInt(customerId));
-      }
-
-      if (whereClauses.length > 0) {
-        query += ` WHERE ${whereClauses.join(' AND ')}`;
-      }
-
-      query += ' ORDER BY o.created_at DESC';
-
-      const result = await client.query(query, values);
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error('Error fetching orders for admin:', err);
-      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء جلب الطلبات.' });
+    } catch (err)
+{
+      console.error('Error fetching all orders for admin:', err);
+      res.status(500).json({ message: 'حدث خطأ في الخادم أثناء جلب جميع الطلبات.' });
     } finally {
       client.release();
     }
   }
 );
 
-
 router.put(
   '/orders/:orderId/assign-delivery',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { orderId } = req.params;
     const { delivery_worker_id } = req.body;
@@ -930,7 +889,7 @@ router.put(
 router.put(
   '/orders/:orderId/cancel',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { orderId } = req.params;
     const client = await pool.connect();
@@ -1019,7 +978,7 @@ router.put(
 router.put(
   '/orders/:orderId/force-cancel',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { orderId } = req.params;
     const { cancellation_reason } = req.body;
@@ -1113,7 +1072,7 @@ router.put(
 router.post(
   '/service-regions',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { name, description, is_active = true, support_phone_number } = req.body;
 
@@ -1155,7 +1114,7 @@ router.post(
 router.get(
   '/service-regions',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const client = await pool.connect();
     try {
@@ -1177,7 +1136,7 @@ router.get(
 router.get(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1210,7 +1169,7 @@ router.get(
 router.put(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1293,7 +1252,7 @@ router.put(
 router.delete(
   '/service-regions/:regionId',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { regionId } = req.params;
     const parsedRegionId = parseInt(regionId);
@@ -1326,7 +1285,7 @@ router.delete(
 router.post(
   '/stores/:storeId/service-regions',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const { region_id } = req.body;
@@ -1402,7 +1361,7 @@ router.post(
 router.get(
   '/stores/:storeId/service-regions',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId } = req.params;
     const parsedStoreId = parseInt(storeId);
@@ -1452,7 +1411,7 @@ router.get(
 router.delete(
   '/stores/:storeId/service-regions/:regionId',
   authMiddleware,
-  checkRole('admin'),
+  checkRole(['admin']),
   async (req, res) => {
     const { storeId, regionId } = req.params;
 
@@ -1502,7 +1461,7 @@ router.delete(
   }
 );
 
-router.get('/test', authMiddleware, checkRole('admin'), (req, res) => {
+router.get('/test', authMiddleware, checkRole(['admin']), (req, res) => {
   res.send('Admin route test is working!');
 });
 
