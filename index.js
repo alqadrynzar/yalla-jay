@@ -11,7 +11,8 @@ const orderRoutes = require('./src/api/orders.js');
 const storeOwnerRoutes = require('./src/api/storeOwner.js');
 const deliveryRoutes = require('./src/api/delivery.js');
 const notificationsRoutes = require('./src/api/notifications.js');
-const publicRoutes = require('./src/api/public.js'); // <-- السطر الجديد
+const publicRoutes = require('./src/api/public.js');
+const branchManagerRoutes = require('./src/api/branchManager.js'); // <-- سطر جديد
 
 const app = express();
 const PORT = 3000;
@@ -37,9 +38,9 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/store-owner', storeOwnerRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api', publicRoutes); // <-- السطر الجديد (لاحظ المسار /api)
+app.use('/api', publicRoutes);
+app.use('/api/branch-manager', branchManagerRoutes); // <-- سطر جديد
 
 app.listen(PORT, () => {
   console.log(`الخادم يعمل الآن على الرابط http://localhost:${PORT}`);
 });
-
